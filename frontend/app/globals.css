@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #10231f;
+  --ink-muted: #5a6f69;
+  --accent: #0f7a67;
+  --accent-soft: #d2f3ea;
+  --surface: #f7fbf9;
+  --raised: #ffffff;
+  --border-soft: rgba(15, 64, 57, 0.1);
+  --border-faint: rgba(15, 64, 57, 0.06);
+}
+
+body {
+  @apply bg-surface text-ink antialiased font-sans;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(54, 184, 154, 0.18), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 95% 5%, rgba(15, 122, 103, 0.1), transparent 50%),
+    linear-gradient(180deg, #f4faf8 0%, #eef5f2 40%, #f7fbf9 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Soft dotted atmosphere */
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.35;
+  background-image: radial-gradient(circle, rgba(15, 78, 68, 0.12) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(180deg, black 0%, transparent 75%);
+}
+
+.page-shell {
+  @apply relative z-10;
+}
+
+.glass-nav {
+  @apply border-b bg-white/75 backdrop-blur-md;
+  border-color: var(--border-faint);
+}
+
+.panel {
+  @apply rounded-2xl border bg-white shadow-soft;
+  border-color: var(--border-soft);
+}
+
+.step-label {
+  @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand-700;
+}
+
+.step-num {
+  @apply flex h-6 w-6 items-center justify-center rounded-md bg-brand-100 text-[11px] font-bold text-brand-800;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-brand-800 hover:shadow-lift active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-ink-muted transition-colors hover:bg-brand-50 hover:text-ink;
+}
+
+.field {
+  @apply w-full rounded-xl border bg-surface-sunken px-4 py-3 text-sm text-ink placeholder:text-ink-soft transition-colors focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-200;
+  border-color: var(--border-soft);
+}
