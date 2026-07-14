@@ -11,6 +11,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.8
       - key: CORS_ORIGINS
+        value: http://localhost:3000
         sync: false
       - key: MONGODB_URI
         sync: false

@@ -25,6 +25,16 @@ app.include_router(repurpose_router.router)
 app.include_router(generate_router.router)
 
 
+@app.get("/")
+async def root():
+    return {
+        "status": "ok",
+        "service": "AI Content Repurposer API",
+        "health": "/api/health",
+        "docs": "/docs",
+    }
+
+
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "langgraph": True}

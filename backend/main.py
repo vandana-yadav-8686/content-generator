@@ -1,13 +1,5 @@
-from fastapi import FastAPI
+"""Render entrypoint — use `uvicorn main:app` from the backend folder."""
 
-app = FastAPI()
+from app.main import app
 
-@app.get("/")
-async def root():
-    return {
-        "status": "success",
-        "message": "Content Generator API is running!"
-    }
-
-# Your existing routers
-app.include_router(...)
+__all__ = ["app"]
