@@ -4,12 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Check,
+  FileUp,
   Film,
   Instagram,
+  Link2,
   Linkedin,
   Loader2,
   Mic,
   Settings,
+  Type,
   Wand2,
   Youtube,
 } from "lucide-react";
@@ -33,6 +36,34 @@ const DELIVERABLES = [
   { id: "instagram_carousel", icon: Instagram, accent: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200" },
   { id: "voiceover_script", icon: Mic, accent: "bg-amber-50 text-amber-800 ring-amber-200" },
 ] as const;
+
+function ComingSoonInputOption({
+  icon: Icon,
+  label,
+}: {
+  icon: typeof Type;
+  label: string;
+}) {
+  return (
+    <div
+      className="group relative cursor-not-allowed"
+      tabIndex={0}
+      aria-label={`${label} — coming soon`}
+    >
+      <span className="inline-flex items-center gap-2 rounded-xl border border-brand-900/10 bg-surface-sunken px-3 py-2 text-sm font-medium text-ink-muted opacity-75">
+        <Icon className="h-4 w-4 shrink-0" aria-hidden />
+        {label}
+      </span>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-ink px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+      >
+        Coming soon
+        <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-ink" />
+      </span>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const { showToast } = useToast();
@@ -354,6 +385,17 @@ export default function HomePage() {
             <span className="step-num">2</span>
             Paste your article
           </p>
+          <p className="mt-2 text-sm text-ink-muted">
+            Paste text below, or use another input — more options on the way.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-xl border border-brand-400 bg-brand-50 px-3 py-2 text-sm font-medium text-brand-800 ring-1 ring-brand-500/20">
+              <Type className="h-4 w-4 shrink-0" aria-hidden />
+              Paste text
+            </span>
+            <ComingSoonInputOption icon={Link2} label="Paste article URL" />
+            <ComingSoonInputOption icon={FileUp} label="Upload PDF" />
+          </div>
         </div>
         <div className="p-5 sm:p-6">
           <textarea
