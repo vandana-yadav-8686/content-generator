@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from app.config import settings
+from app.context import get_user_id
 from app.database.mongodb import ensure_indexes, get_content_collection
 from app.graph.nodes._utils import run_node
 from app.graph.registry import FORMAT_REGISTRY, PROMPT_VERSION
@@ -76,7 +77,7 @@ async def save_to_mongodb(state: GraphState) -> dict:
             "updated_at": now,
             # Reserved for future: vector embeddings / semantic search
             "embedding": None,
-            "tenant_id": None,
+            "tenant_id": get_user_id(),
         }
 
         result = col.insert_one(doc)

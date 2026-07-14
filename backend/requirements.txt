@@ -14,3 +14,6 @@ langgraph==0.2.60
 langchain-core==0.3.29
 langchain-openai==0.3.0
 pymongo==4.10.1
+python-jose[cryptography]==3.3.0
+bcrypt==4.2.1
+email-validator==2.2.0

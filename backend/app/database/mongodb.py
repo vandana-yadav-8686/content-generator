@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 _client: Any = None
 _content_indexes_ready = False
 _settings_indexes_ready = False
+_users_indexes_ready = False
 
 
 def get_mongo_client():
@@ -56,8 +57,13 @@ def get_content_collection():
 
 
 def get_settings_collection():
-    """Provider API keys and config (encrypted)."""
+    """Provider API keys and config (encrypted), scoped per user."""
     return _require_client()[settings.mongodb_db]["provider_settings"]
+
+
+def get_users_collection():
+    """Registered users for JWT authentication."""
+    return _require_client()[settings.mongodb_db]["users"]
 
 
 def ensure_content_indexes() -> None:
@@ -83,7 +89,16 @@ def ensure_settings_indexes() -> None:
         return
     try:
         col = get_settings_collection()
-        col.create_index("provider_id", unique=True)
+        # Remove legacy global unique index (provider_id only) from pre-auth schema
+        for idx in col.list_indexes():
+            key = dict(idx.get("key") or {})
+            if key == {"provider_id": 1} and idx.get("unique"):
+                try:
+                    col.drop_index(idx["name"])
+                    logger.info("dropped legacy provider_settings index=%s", idx["name"])
+                except Exception:
+                    logger.exception("failed dropping legacy index %s", idx.get("name"))
+        col.create_index([("user_id", 1), ("provider_id", 1)], unique=True)
         col.create_index("enabled")
         col.create_index("updated_at")
         _settings_indexes_ready = True
@@ -91,7 +106,22 @@ def ensure_settings_indexes() -> None:
         logger.exception("Failed creating settings Mongo indexes")
 
 
+def ensure_user_indexes() -> None:
+    global _users_indexes_ready
+    if _users_indexes_ready or not settings.mongodb_enabled:
+        return
+    try:
+        col = get_users_collection()
+        col.create_index("email", unique=True)
+        col.create_index("user_id", unique=True)
+        col.create_index("created_at")
+        _users_indexes_ready = True
+    except Exception:
+        logger.exception("Failed creating users Mongo indexes")
+
+
 def ensure_indexes() -> None:
     """Ensure indexes for all collections."""
     ensure_content_indexes()
     ensure_settings_indexes()
+    ensure_user_indexes()

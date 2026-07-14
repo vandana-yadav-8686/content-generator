@@ -70,3 +70,18 @@ body::before {
   @apply w-full rounded-xl border bg-surface-sunken px-4 py-3 text-sm text-ink placeholder:text-ink-soft transition-colors focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-200;
   border-color: var(--border-soft);
 }
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+.toast-slide-in {
+  animation: toast-slide-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}

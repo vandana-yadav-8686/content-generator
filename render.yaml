@@ -18,3 +18,5 @@ services:
         value: content_repurposing
       - key: ENCRYPTION_KEY
         sync: false
+      - key: JWT_SECRET
+        sync: false

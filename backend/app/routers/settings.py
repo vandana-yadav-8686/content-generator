@@ -1,10 +1,11 @@
 import logging
 
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from fastapi import APIRouter, HTTPException
 from pymongo.errors import PyMongoError
 
-logger = logging.getLogger(__name__)
+from app.dependencies.auth import get_current_user
+from app.models.user import UserPublic
 
 from app.models.schemas import (
     ProviderId,
@@ -18,12 +19,16 @@ from app.providers.factory import ProviderFactory
 from app.services.encryption import encryption_service
 from app.services.settings_service import settings_repository
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 
 def _mongo_http_error(exc: Exception) -> HTTPException:
-    if isinstance(exc, RuntimeError) and "MongoDB" in str(exc):
-        return HTTPException(status_code=503, detail=str(exc))
+    if isinstance(exc, RuntimeError):
+        msg = str(exc)
+        if "MongoDB" in msg or "Authentication required" in msg:
+            return HTTPException(status_code=503, detail=msg)
     if isinstance(exc, PyMongoError):
         logger.exception("mongodb_settings_error")
         return HTTPException(
@@ -72,7 +77,8 @@ def _build_response(provider_id: ProviderId, saved: ProviderConfig | None) -> Pr
 
 
 @router.get("/providers", response_model=list[ProviderConfigResponse])
-async def list_providers():
+async def list_providers(_user: UserPublic = Depends(get_current_user)):
+    settings_repository.ensure_provider_defaults()
     saved = settings_repository.get_all_safe()
     providers: list[ProviderConfigResponse] = []
     for pid in ProviderId:
@@ -100,7 +106,10 @@ async def list_providers():
 
 
 @router.get("/providers/{provider_id}", response_model=ProviderConfigResponse)
-async def get_provider(provider_id: ProviderId):
+async def get_provider(
+    provider_id: ProviderId,
+    _user: UserPublic = Depends(get_current_user),
+):
     saved = settings_repository.get_all_safe().get(provider_id)
     if saved is None:
         try:
@@ -111,7 +120,11 @@ async def get_provider(provider_id: ProviderId):
 
 
 @router.put("/providers/{provider_id}", response_model=ProviderConfigResponse)
-async def update_provider(provider_id: ProviderId, update: ProviderConfigUpdate):
+async def update_provider(
+    provider_id: ProviderId,
+    update: ProviderConfigUpdate,
+    _user: UserPublic = Depends(get_current_user),
+):
     try:
         existing = settings_repository.get(provider_id)
     except Exception as exc:
@@ -164,7 +177,11 @@ class TestBody(BaseModel):
 
 
 @router.post("/providers/{provider_id}/test", response_model=TestConnectionResponse)
-async def test_provider(provider_id: ProviderId, request: TestBody | None = None):
+async def test_provider(
+    provider_id: ProviderId,
+    request: TestBody | None = None,
+    _user: UserPublic = Depends(get_current_user),
+):
     try:
         saved = settings_repository.get(provider_id)
     except Exception as exc:

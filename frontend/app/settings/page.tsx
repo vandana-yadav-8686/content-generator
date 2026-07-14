@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import ProviderCard from "@/components/ProviderCard";
+import OpenAITip from "@/components/OpenAITip";
+import { useToast } from "@/components/Toast";
 import { getProviders } from "@/lib/api";
 import type { ProviderConfig } from "@/lib/types";
 
 export default function SettingsPage() {
+  const { showToast } = useToast();
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -17,7 +20,9 @@ export default function SettingsPage() {
       setProviders(data);
       setError("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load providers");
+      const msg = e instanceof Error ? e.message : "Failed to load providers";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -49,6 +54,8 @@ export default function SettingsPage() {
           Connect an API key. Keys are encrypted on the server and never shown again after saving.
         </p>
       </div>
+
+      <OpenAITip />
 
       {error && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">

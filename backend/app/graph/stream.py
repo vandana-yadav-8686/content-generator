@@ -9,7 +9,7 @@ import uuid
 from collections.abc import AsyncIterator
 from typing import Any
 
-from app.graph.graph import get_compiled_graph
+from app.graph.graph import get_compiled_graph, reset_compiled_graph
 from app.graph.registry import FORMAT_REGISTRY, PROMPT_VERSION, normalize_format_ids
 from app.graph.state import GraphState
 from app.models.schemas import ProviderId
@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 _STATUS = {
     "validate": "Validating article…",
     "summarize": "Summarizing with LangGraph…",
-    "insights": "Extracting key insights…",
-    "tone": "Applying tone…",
+    "extract_insights": "Extracting key insights…",
+    "detect_tone": "Applying tone…",
     "quality_review": "Quality review…",
     "mongodb_save": "Saving to MongoDB…",
 }
@@ -211,7 +211,7 @@ async def stream_repurpose_graph(
                         "content": content,
                     }
 
-                if node == "insights" and delta.get("insights"):
+                if node == "extract_insights" and delta.get("insights"):
                     insights = delta["insights"]
                     if isinstance(insights, dict):
                         yield {
@@ -262,10 +262,28 @@ async def stream_repurpose_graph(
             "model": model,
         }
     except ValueError as e:
-        yield {"type": "error", "message": str(e)}
+        msg = str(e)
+        if "already being used as a state key" in msg:
+            reset_compiled_graph()
+            logger.warning("state_key_collision recovered: %s", msg)
+            yield {
+                "type": "error",
+                "message": "Workflow refreshed. Click Generate again.",
+            }
+        else:
+            yield {"type": "error", "message": msg}
     except Exception as e:
-        logger.exception("langgraph_stream failed")
-        yield {"type": "error", "message": f"Generation failed: {e}"}
+        msg = str(e)
+        if "already being used as a state key" in msg:
+            reset_compiled_graph()
+            logger.warning("state_key_collision recovered: %s", msg)
+            yield {
+                "type": "error",
+                "message": "Workflow refreshed. Click Generate again.",
+            }
+        else:
+            logger.exception("langgraph_stream failed")
+            yield {"type": "error", "message": f"Generation failed: {e}"}
     finally:
         if not runner.done():
             runner.cancel()

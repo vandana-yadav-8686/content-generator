@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.dependencies.auth import get_current_user
 from app.graph.graph import graph_mermaid, run_repurpose_graph
 from app.models.content import GenerateContentRequest, GenerateContentResponse
+from app.models.user import UserPublic
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +18,10 @@ router = APIRouter(tags=["langgraph"])
 
 @router.post("/api/generate-content", response_model=GenerateContentResponse)
 @router.post("/generate-content", response_model=GenerateContentResponse, include_in_schema=False)
-async def generate_content(request: GenerateContentRequest):
+async def generate_content(
+    request: GenerateContentRequest,
+    _user: UserPublic = Depends(get_current_user),
+):
     """
     Production LangGraph workflow:
     validate → summarize → insights → tone → parallel formats →

@@ -1,7 +1,10 @@
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+
+from app.dependencies.auth import get_current_user
+from app.models.user import UserPublic
 
 from app.graph.graph import run_repurpose_graph
 from app.graph.registry import FORMAT_REGISTRY
@@ -28,7 +31,10 @@ def _outputs_from_graph(result: dict) -> list[RepurposeOutput]:
 
 
 @router.post("/", response_model=RepurposeResponse)
-async def repurpose_article(request: RepurposeRequest):
+async def repurpose_article(
+    request: RepurposeRequest,
+    _user: UserPublic = Depends(get_current_user),
+):
     """Generate via LangGraph using app/graph/prompts (not classic app/prompts)."""
     try:
         result = await run_repurpose_graph(
@@ -56,7 +62,10 @@ async def repurpose_article(request: RepurposeRequest):
 
 
 @router.post("/stream")
-async def repurpose_stream(request: RepurposeRequest):
+async def repurpose_stream(
+    request: RepurposeRequest,
+    _user: UserPublic = Depends(get_current_user),
+):
     """SSE stream powered by LangGraph + graph/prompts."""
 
     async def event_generator():

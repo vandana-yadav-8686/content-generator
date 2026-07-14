@@ -5,7 +5,10 @@ import type {
   StreamEvent,
   TestConnectionResponse,
   ToneId,
+  User,
+  AuthResponse,
 } from "./types";
+import { authHeaders } from "./auth";
 import { getApiBase, getStreamEndpoint } from "./backend-url.js";
 
 function apiBase(): string {
@@ -14,7 +17,11 @@ function apiBase(): string {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${apiBase()}${path}`, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...options?.headers,
+    },
     ...options,
   });
   if (!res.ok) {
@@ -29,6 +36,28 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(message || "Request failed");
   }
   return res.json();
+}
+
+export async function login(email: string, password: string): Promise<AuthResponse> {
+  return request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function register(
+  name: string,
+  email: string,
+  password: string
+): Promise<AuthResponse> {
+  return request("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ name, email, password }),
+  });
+}
+
+export async function fetchMe(): Promise<User> {
+  return request("/auth/me");
 }
 
 export async function getProviders(): Promise<ProviderConfig[]> {
@@ -63,7 +92,10 @@ export async function repurposeArticleStream(
   const streamUrl = getStreamEndpoint();
   const res = await fetch(streamUrl, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
     body: JSON.stringify({
       article,
       provider_id: options?.providerId,

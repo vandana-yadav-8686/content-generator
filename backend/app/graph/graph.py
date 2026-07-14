@@ -62,8 +62,9 @@ def build_graph(*, checkpointer: Any | None = None):
 
     g.add_node("validate", validate_input)
     g.add_node("summarize", summarize)
-    g.add_node("insights", extract_insights)
-    g.add_node("tone", detect_tone)
+    # Node names must NOT match GraphState keys (insights, tone) — LangGraph collision
+    g.add_node("extract_insights", extract_insights)
+    g.add_node("detect_tone", detect_tone)
 
     for fmt_id, node_fn in FORMAT_NODES.items():
         g.add_node(fmt_id, node_fn)
@@ -73,9 +74,9 @@ def build_graph(*, checkpointer: Any | None = None):
 
     g.add_edge(START, "validate")
     g.add_edge("validate", "summarize")
-    g.add_edge("summarize", "insights")
-    g.add_edge("insights", "tone")
-    g.add_conditional_edges("tone", fan_out_formats, list(FORMAT_NODE_NAMES))
+    g.add_edge("summarize", "extract_insights")
+    g.add_edge("extract_insights", "detect_tone")
+    g.add_conditional_edges("detect_tone", fan_out_formats, list(FORMAT_NODE_NAMES))
 
     for fmt_id in FORMAT_NODE_NAMES:
         g.add_edge(fmt_id, "quality_review")
@@ -100,6 +101,12 @@ def get_compiled_graph():
     if _compiled is None:
         _compiled = build_graph(checkpointer=_memory)
     return _compiled
+
+
+def reset_compiled_graph() -> None:
+    """Force rebuild after code/deploy changes that alter node names."""
+    global _compiled
+    _compiled = None
 
 
 def graph_mermaid() -> str:

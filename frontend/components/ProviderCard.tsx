@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import { updateProvider, testProvider } from "@/lib/api";
+import { useToast } from "@/components/Toast";
 import type { ProviderConfig } from "@/lib/types";
 
 interface Props {
@@ -27,6 +28,7 @@ function resolveModel(provider: ProviderConfig, current?: string): string {
 }
 
 export default function ProviderCard({ provider, onUpdate }: Props) {
+  const { showToast } = useToast();
   const [enabled, setEnabled] = useState(provider.enabled);
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -99,11 +101,13 @@ export default function ProviderCard({ provider, onUpdate }: Props) {
         base_url: baseUrl || undefined,
       });
       setTestResult(result);
+      showToast(result.message, result.success ? "success" : "error");
     } catch (e) {
       setTestResult({
         success: false,
         message: e instanceof Error ? e.message : "Test failed",
       });
+      showToast(e instanceof Error ? e.message : "Test failed", "error");
     } finally {
       setTesting(false);
     }
@@ -123,10 +127,13 @@ export default function ProviderCard({ provider, onUpdate }: Props) {
       setApiKey("");
       setModel(safeModel);
       setSaveMessage("Settings saved successfully");
+      showToast("Provider settings saved", "success");
       onUpdate();
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (e) {
-      setSaveMessage(e instanceof Error ? e.message : "Save failed");
+      const msg = e instanceof Error ? e.message : "Save failed";
+      setSaveMessage(msg);
+      showToast(msg, "error");
     } finally {
       setSaving(false);
     }
@@ -149,15 +156,33 @@ export default function ProviderCard({ provider, onUpdate }: Props) {
           </div>
         </div>
 
-        <label className="relative inline-flex cursor-pointer items-center">
+        <label className="relative inline-flex cursor-pointer items-center gap-2.5">
           <input
             type="checkbox"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
             className="peer sr-only"
           />
-          <div className="h-6 w-11 rounded-full bg-brand-900/15 peer-checked:bg-brand-600 peer-focus:ring-2 peer-focus:ring-brand-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-full" />
-          <span className="ml-3 text-sm text-ink-muted">{enabled ? "On" : "Off"}</span>
+          <div
+            className={`relative h-7 w-12 rounded-full transition-colors duration-200 ${
+              enabled
+                ? "bg-brand-600 shadow-[inset_0_0_0_1px_rgba(15,122,103,0.3)]"
+                : "bg-brand-900/12"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                enabled ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </div>
+          <span
+            className={`text-xs font-semibold uppercase tracking-wide ${
+              enabled ? "text-brand-700" : "text-ink-soft"
+            }`}
+          >
+            {enabled ? "On" : "Off"}
+          </span>
         </label>
       </div>
 

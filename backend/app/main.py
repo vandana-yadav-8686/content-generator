@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.routers import auth as auth_router
 from app.routers import settings as settings_router
 from app.routers import repurpose as repurpose_router
 from app.routers import generate as generate_router
@@ -21,6 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router.router)
 app.include_router(settings_router.router)
 app.include_router(repurpose_router.router)
 app.include_router(generate_router.router)

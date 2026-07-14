@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from app.config import settings
+from app.context import get_user_id
 from app.database.mongodb import ensure_settings_indexes, get_settings_collection
 from app.models.schemas import ProviderConfig, ProviderId
 from app.providers.factory import ProviderFactory
@@ -19,12 +20,24 @@ class SettingsRepository:
     def __init__(self) -> None:
         if settings.mongodb_enabled:
             ensure_settings_indexes()
-            self.ensure_provider_defaults()
+
+    def _require_user_id(self) -> str:
+        user_id = get_user_id()
+        if not user_id:
+            raise RuntimeError("Authentication required to access provider settings.")
+        return user_id
+
+    def _user_query(self, extra: dict | None = None) -> dict:
+        q = {"user_id": self._require_user_id()}
+        if extra:
+            q.update(extra)
+        return q
 
     def ensure_provider_defaults(self) -> None:
-        """Seed all known providers in MongoDB (insert-only; never overwrites saved keys)."""
+        """Seed all known providers in MongoDB for the current user."""
         try:
             col = self._collection()
+            user_id = self._require_user_id()
         except Exception:
             logger.exception("provider_seed_skipped")
             return
@@ -34,9 +47,10 @@ class SettingsRepository:
         for provider_id in ProviderId:
             meta = ProviderFactory.get_provider_class(provider_id).metadata
             result = col.update_one(
-                {"provider_id": provider_id.value},
+                {"user_id": user_id, "provider_id": provider_id.value},
                 {
                     "$setOnInsert": {
+                        "user_id": user_id,
                         "provider_id": provider_id.value,
                         "enabled": False,
                         "encrypted_api_key": None,
@@ -52,7 +66,7 @@ class SettingsRepository:
                 inserted += 1
 
         if inserted:
-            logger.info("seeded provider_settings count=%s", inserted)
+            logger.info("seeded provider_settings user=%s count=%s", user_id, inserted)
 
     def _decrypt_api_key(self, encrypted: str | None, provider_id: str) -> str | None:
         if not encrypted:
@@ -76,7 +90,7 @@ class SettingsRepository:
 
     def get_all(self) -> dict[ProviderId, ProviderConfig]:
         result: dict[ProviderId, ProviderConfig] = {}
-        for doc in self._collection().find({}):
+        for doc in self._collection().find(self._user_query()):
             try:
                 provider_id = ProviderId(doc["provider_id"])
             except ValueError:
@@ -102,7 +116,9 @@ class SettingsRepository:
             return {}
 
     def get(self, provider_id: ProviderId) -> Optional[ProviderConfig]:
-        doc = self._collection().find_one({"provider_id": provider_id.value})
+        doc = self._collection().find_one(
+            self._user_query({"provider_id": provider_id.value})
+        )
         if not doc:
             return None
         api_key = None
@@ -122,17 +138,19 @@ class SettingsRepository:
             encrypted_key = encryption_service.encrypt(config.api_key)
         else:
             existing = self._collection().find_one(
-                {"provider_id": config.provider_id.value},
+                self._user_query({"provider_id": config.provider_id.value}),
                 {"encrypted_api_key": 1},
             )
             if existing and existing.get("encrypted_api_key"):
                 encrypted_key = existing["encrypted_api_key"]
 
+        user_id = self._require_user_id()
         now = datetime.now(timezone.utc)
         self._collection().update_one(
-            {"provider_id": config.provider_id.value},
+            {"user_id": user_id, "provider_id": config.provider_id.value},
             {
                 "$set": {
+                    "user_id": user_id,
                     "provider_id": config.provider_id.value,
                     "enabled": bool(config.enabled),
                     "encrypted_api_key": encrypted_key,
@@ -148,7 +166,7 @@ class SettingsRepository:
 
     def get_active_provider(self) -> Optional[ProviderConfig]:
         try:
-            for doc in self._collection().find({"enabled": True}):
+            for doc in self._collection().find(self._user_query({"enabled": True})):
                 provider_id = ProviderId(doc["provider_id"])
                 config = self.get(provider_id)
                 if config and config.api_key:

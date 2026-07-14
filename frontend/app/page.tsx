@@ -14,6 +14,8 @@ import {
   Youtube,
 } from "lucide-react";
 import OutputCard from "@/components/OutputCard";
+import OpenAITip from "@/components/OpenAITip";
+import { useToast } from "@/components/Toast";
 import { repurposeArticleStream } from "@/lib/api";
 import {
   ALL_FORMATS,
@@ -33,6 +35,7 @@ const DELIVERABLES = [
 ] as const;
 
 export default function HomePage() {
+  const { showToast } = useToast();
   const [article, setArticle] = useState("");
   const [tone, setTone] = useState<ToneId>("professional");
   const [selectedFormats, setSelectedFormats] = useState<Set<string>>(() => new Set());
@@ -162,6 +165,7 @@ export default function HomePage() {
             case "error":
               streamError = event.message;
               setError(event.message);
+              showToast(event.message, "error");
               setStatusMessage("");
               break;
           }
@@ -174,7 +178,9 @@ export default function HomePage() {
         );
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Repurposing failed");
+      const msg = e instanceof Error ? e.message : "Repurposing failed";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
       setStreamingFormats(new Set());
@@ -202,6 +208,8 @@ export default function HomePage() {
           Pick formats, paste one article, then generate — only for what you need.
         </p>
       </header>
+
+      <OpenAITip />
 
       {error && (
         <div

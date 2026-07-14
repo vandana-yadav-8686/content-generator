@@ -9,10 +9,14 @@ export const runtime = "nodejs";
 /** Proxy SSE from FastAPI without buffering (next.config rewrites buffer streams). */
 export async function POST(request: NextRequest) {
   const body = await request.text();
+  const auth = request.headers.get("authorization");
 
   const backendRes = await fetch(`${BACKEND_URL}/api/repurpose/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(auth ? { Authorization: auth } : {}),
+    },
     body,
     cache: "no-store",
   });

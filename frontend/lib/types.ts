@@ -14,6 +14,19 @@ export interface ModelOption {
   modality: string;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  created_at: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
+}
+
 export interface ProviderConfig {
   provider_id: ProviderId;
   name: string;
