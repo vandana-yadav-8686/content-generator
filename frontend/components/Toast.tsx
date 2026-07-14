@@ -25,15 +25,15 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const STYLES: Record<ToastType, string> = {
-  success: "border-l-brand-600 bg-white text-ink",
-  error: "border-l-rose-500 bg-white text-ink",
-  info: "border-l-sky-500 bg-white text-ink",
+  success: "border-l-brand-600 bg-surface-raised text-ink",
+  error: "border-l-rose-500 bg-surface-raised text-ink",
+  info: "border-l-sky-500 bg-surface-raised text-ink",
 };
 
 const ICON_STYLES: Record<ToastType, string> = {
-  success: "bg-brand-50 text-brand-700",
-  error: "bg-rose-50 text-rose-600",
-  info: "bg-sky-50 text-sky-600",
+  success: "bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300",
+  error: "bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400",
+  info: "bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400",
 };
 
 const ICONS: Record<ToastType, typeof Info> = {

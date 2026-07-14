@@ -31,7 +31,7 @@ export default function OutputCard({ format, content, streaming }: Props) {
         <button
           onClick={handleCopy}
           disabled={streaming || !content}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-brand-900/10 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:border-brand-300 hover:text-ink disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-brand-900/10 bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:border-brand-300 hover:text-ink disabled:opacity-40 dark:border-brand-200/15"
         >
           {copied ? (
             <>

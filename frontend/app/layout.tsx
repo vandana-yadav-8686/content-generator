@@ -21,20 +21,35 @@ export const metadata: Metadata = {
   description: "Transform one article into YouTube, Reel, LinkedIn, carousel, and voice-over scripts",
 };
 
+const themeInitScript = `
+(function(){
+  try {
+    var k = 'repurposer-theme';
+    var t = localStorage.getItem(k);
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    if (t === 'dark') document.documentElement.classList.add('dark');
+    document.documentElement.style.colorScheme = t;
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang="en" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body>
         <Providers>
           <div className="page-shell">
             <AppNav />
-            <main className="mx-auto max-w-6xl px-5 py-8 sm:px-6 sm:py-10">
-              {children}
-            </main>
+            <main className="flex-1">{children}</main>
           </div>
         </Providers>
       </body>

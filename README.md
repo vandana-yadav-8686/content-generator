@@ -1,7 +1,8 @@
 # AI Content Repurposer — Local Setup Guide
 
 **Repository:** [github.com/vandana-yadav-8686/content-generator](https://github.com/vandana-yadav-8686/content-generator)  
-**Live app:** [content-generator-flax-nine.vercel.app](https://content-generator-flax-nine.vercel.app/)
+**Live app:** [content-generator-flax-nine.vercel.app](https://content-generator-flax-nine.vercel.app/)  
+**Project docs:** [DOCUMENTATION.md](./DOCUMENTATION.md) — architecture, approach, why, and future plan
 
 Turn one article into multiple formats (YouTube script, Reel, LinkedIn post, Instagram carousel, voiceover) using **FastAPI + LangGraph** (backend) and **Next.js** (frontend).
 

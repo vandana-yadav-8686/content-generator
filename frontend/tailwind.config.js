@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: "class",
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -20,14 +21,14 @@ module.exports = {
           900: "#0f4039",
         },
         ink: {
-          DEFAULT: "#10231f",
-          muted: "#5a6f69",
-          soft: "#8a9e97",
+          DEFAULT: "var(--ink)",
+          muted: "var(--ink-muted)",
+          soft: "var(--ink-soft)",
         },
         surface: {
-          DEFAULT: "#f7fbf9",
-          raised: "#ffffff",
-          sunken: "#eef5f2",
+          DEFAULT: "var(--surface)",
+          raised: "var(--raised)",
+          sunken: "var(--surface-sunken)",
         },
       },
       fontFamily: {
@@ -35,8 +36,8 @@ module.exports = {
         sans: ["var(--font-body)", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        soft: "0 1px 2px rgba(16, 35, 31, 0.04), 0 8px 24px rgba(16, 35, 31, 0.06)",
-        lift: "0 4px 20px rgba(15, 122, 103, 0.12)",
+        soft: "var(--shadow-soft)",
+        lift: "var(--shadow-lift)",
       },
       keyframes: {
         "fade-up": {

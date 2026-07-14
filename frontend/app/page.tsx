@@ -22,7 +22,6 @@ import { useToast } from "@/components/Toast";
 import { repurposeArticleStream } from "@/lib/api";
 import {
   ALL_FORMATS,
-  FORMAT_DESCRIPTIONS,
   FORMAT_LABELS,
   TONE_OPTIONS,
   type RepurposeOutput,
@@ -50,7 +49,7 @@ function ComingSoonInputOption({
       tabIndex={0}
       aria-label={`${label} — coming soon`}
     >
-      <span className="inline-flex items-center gap-2 rounded-xl border border-brand-900/10 bg-surface-sunken px-3 py-2 text-sm font-medium text-ink-muted opacity-75">
+      <span className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-brand-900/15 bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-ink-muted opacity-80 dark:border-brand-200/20">
         <Icon className="h-4 w-4 shrink-0" aria-hidden />
         {label}
       </span>
@@ -87,11 +86,8 @@ export default function HomePage() {
     if (loading) return;
     setSelectedFormats((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
@@ -108,11 +104,8 @@ export default function HomePage() {
 
   function toggleSelectAll() {
     if (loading) return;
-    if (allSelected) {
-      clearSelection();
-    } else {
-      selectAll();
-    }
+    if (allSelected) clearSelection();
+    else selectAll();
   }
 
   async function handleRepurpose() {
@@ -225,282 +218,273 @@ export default function HomePage() {
     : `Generate ${selectedList.length} selected`;
 
   return (
-    <div className="space-y-8 sm:space-y-10">
-      {/* Brand hero — one composition */}
-      <header className="animate-fade-up max-w-2xl">
-        <p className="step-label mb-3">
-          <span className="step-num">AI</span>
-          Content studio
-        </p>
-        <h1 className="font-display text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
-          Repurposer
-        </h1>
-        <p className="mt-3 text-base leading-relaxed text-ink-muted sm:text-lg">
-          Pick formats, paste one article, then generate — only for what you need.
-        </p>
-      </header>
-
-      <OpenAITip />
-
-      {error && (
-        <div
-          role="alert"
-          className="animate-fade-up rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
-        >
-          {error}
-          {error.includes("configured") && (
-            <Link href="/settings" className="ml-1 font-semibold underline">
-              Open Settings
-            </Link>
-          )}
-        </div>
-      )}
-
-      {loading && (
-        <div className="flex items-center gap-3 rounded-2xl border border-brand-200 bg-brand-50/80 px-4 py-3.5 text-sm text-brand-900 shadow-soft">
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-brand-700" />
-          <div className="min-w-0 flex-1">
-            <p className="font-medium">
-              {activeFormat
-                ? `Writing ${FORMAT_LABELS[activeFormat]}…`
-                : statusMessage || "Reading your article…"}
-            </p>
-            <div className="mt-2 h-1 overflow-hidden rounded-full bg-brand-200/80">
-              <div className="h-full w-2/5 animate-pulse-line rounded-full bg-brand-600" />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Step 1 — Formats */}
-      <section className="animate-fade-up-delay">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="step-label">
-              <span className="step-num">1</span>
-              Choose formats
-            </p>
-            <p className="mt-1.5 text-sm text-ink-muted">
-              {noneSelected
-                ? "Select at least one format to generate"
-                : `${selectedList.length} of ${ALL_FORMATS.length} selected — fewer formats means fewer API calls`}
-            </p>
-          </div>
-          <div className="inline-flex items-center rounded-xl border border-brand-900/10 bg-white p-1 shadow-soft">
+    <div className="studio-shell flex-col lg:flex-row">
+      {/* ── Left sidebar: formats ── */}
+      <aside className="studio-sidebar flex max-h-[42vh] flex-col lg:max-h-none">
+        <div className="border-b border-brand-900/6 px-4 py-4 sm:px-5">
+          <p className="step-label">
+            <span className="step-num">1</span>
+            Choose formats
+          </p>
+          <p className="mt-1.5 text-xs text-ink-muted">
+            {noneSelected
+              ? "Pick at least one output"
+              : `${selectedList.length} of ${ALL_FORMATS.length} selected`}
+          </p>
+          <div className="mt-3 flex gap-2">
             <button
               type="button"
               onClick={toggleSelectAll}
               disabled={loading}
               aria-pressed={allSelected}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+              className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
                 allSelected
                   ? "bg-brand-700 text-white"
-                  : "text-ink-muted hover:bg-brand-50 hover:text-brand-800"
+                  : "border border-brand-900/10 bg-surface-raised text-ink-muted hover:border-brand-300 dark:border-brand-200/15"
               }`}
             >
-              <span
-                className={`flex h-4 w-4 items-center justify-center rounded border ${
-                  allSelected
-                    ? "border-white/40 bg-white/20 text-white"
-                    : "border-brand-900/20 bg-white text-transparent"
-                }`}
-              >
-                <Check className="h-2.5 w-2.5" strokeWidth={3} />
-              </span>
-              {allSelected ? "All selected" : "Select all"}
+              {allSelected ? "All ✓" : "Select all"}
             </button>
             <button
               type="button"
               onClick={clearSelection}
               disabled={loading || noneSelected}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink disabled:opacity-40"
+              className="rounded-lg border border-brand-900/10 px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface-raised disabled:opacity-40 dark:border-brand-200/15"
             >
               Clear
             </button>
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {DELIVERABLES.map(({ id, icon: Icon, accent }) => {
-            const selected = selectedFormats.has(id);
-            const ready = Boolean(outputMap[id]) && !streamingFormats.has(id);
-            const streaming = streamingFormats.has(id);
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => toggleFormat(id)}
-                disabled={loading}
-                aria-pressed={selected}
-                className={`group relative rounded-2xl border bg-white p-4 text-left transition-all duration-200 disabled:opacity-60 ${
-                  selected
-                    ? "border-brand-400 shadow-lift ring-2 ring-brand-500/20"
-                    : "border-brand-900/10 shadow-soft hover:-translate-y-0.5 hover:border-brand-300 opacity-90"
-                } ${activeFormat === id ? "ring-2 ring-brand-400" : ""}`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div
-                    className={`inline-flex rounded-xl p-2.5 ring-1 ring-inset ${accent} transition-transform duration-200 group-hover:scale-105`}
-                  >
-                    <Icon className="h-4 w-4" />
+        <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-4">
+          <div className="space-y-1.5">
+            {DELIVERABLES.map(({ id, icon: Icon, accent }) => {
+              const selected = selectedFormats.has(id);
+              const ready = Boolean(outputMap[id]) && !streamingFormats.has(id);
+              const streaming = streamingFormats.has(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => toggleFormat(id)}
+                  disabled={loading}
+                  aria-pressed={selected}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all disabled:opacity-60 ${
+                    selected
+                      ? "bg-brand-50 ring-1 ring-brand-400/40 dark:bg-brand-900/40 dark:ring-brand-500/40"
+                      : "hover:bg-surface-sunken"
+                  } ${activeFormat === id ? "ring-2 ring-brand-500" : ""}`}
+                >
+                  <div className={`rounded-lg p-2 ring-1 ring-inset ${accent}`}>
+                    <Icon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">
+                      {FORMAT_LABELS[id]}
+                    </p>
+                    {streaming && (
+                      <p className="flex items-center gap-1 text-[11px] font-medium text-brand-700">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Writing…
+                      </p>
+                    )}
+                    {ready && !streaming && (
+                      <p className="flex items-center gap-1 text-[11px] font-medium text-brand-700">
+                        <Check className="h-3 w-3" /> Ready
+                      </p>
+                    )}
                   </div>
                   <span
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
                       selected
                         ? "border-brand-600 bg-brand-600 text-white"
-                        : "border-brand-900/20 bg-white text-transparent"
+                        : "border-brand-900/15 bg-surface-raised dark:border-brand-200/20"
                     }`}
-                    aria-hidden
                   >
-                    <Check className="h-3 w-3" strokeWidth={3} />
+                    {selected && <Check className="h-3 w-3" strokeWidth={3} />}
                   </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Main workspace ── */}
+      <div className="studio-main min-h-0 flex-1">
+        <div className="flex h-full flex-col overflow-hidden">
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-none px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
+              <div className="mb-4 space-y-3">
+                <div>
+                  <h1 className="font-display text-xl font-semibold text-ink sm:text-2xl">
+                    Create content
+                  </h1>
+                  <p className="mt-0.5 text-sm text-ink-muted">
+                    Paste your article and generate platform-ready copy.
+                  </p>
                 </div>
-                <p className="mt-3 font-display text-sm font-semibold text-ink">
-                  {FORMAT_LABELS[id]}
-                </p>
-                <p className="mt-1 text-xs leading-snug text-ink-muted line-clamp-2">
-                  {FORMAT_DESCRIPTIONS[id]}
-                </p>
-                {streaming && (
-                  <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-brand-700">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Writing…
-                  </p>
-                )}
-                {ready && (
-                  <p className="mt-3 flex items-center gap-1 text-xs font-semibold text-brand-700">
-                    <Check className="h-3 w-3" /> Ready
-                  </p>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </section>
+                <OpenAITip />
+              </div>
 
-      {/* Step 2 — Article */}
-      <section className="panel animate-fade-up-late overflow-hidden">
-        <div className="border-b border-brand-900/5 px-5 py-4 sm:px-6">
-          <p className="step-label">
-            <span className="step-num">2</span>
-            Paste your article
-          </p>
-          <p className="mt-2 text-sm text-ink-muted">
-            Paste text below, or use another input — more options on the way.
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-2 rounded-xl border border-brand-400 bg-brand-50 px-3 py-2 text-sm font-medium text-brand-800 ring-1 ring-brand-500/20">
-              <Type className="h-4 w-4 shrink-0" aria-hidden />
-              Paste text
-            </span>
-            <ComingSoonInputOption icon={Link2} label="Paste article URL" />
-            <ComingSoonInputOption icon={FileUp} label="Upload PDF" />
-          </div>
-        </div>
-        <div className="p-5 sm:p-6">
-          <textarea
-            value={article}
-            onChange={(e) => setArticle(e.target.value)}
-            rows={11}
-            placeholder="Paste a blog post, newsletter, or case study here…"
-            className="field min-h-[220px] resize-y font-sans leading-relaxed"
-            disabled={loading}
-          />
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <p
-              className={`text-xs ${
-                article.trim().length >= 50 ? "text-brand-700" : "text-ink-soft"
-              }`}
-            >
-              {article.length.toLocaleString()} characters
-              {article.trim().length > 0 && article.trim().length < 50 && (
-                <span className="text-amber-700"> · need {50 - article.trim().length} more</span>
+              {error && (
+                <div
+                  role="alert"
+                  className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+                >
+                  {error}
+                  {error.includes("configured") && (
+                    <Link href="/settings" className="ml-1 font-semibold underline">
+                      Open Settings
+                    </Link>
+                  )}
+                </div>
               )}
-            </p>
-            <label className="flex items-center gap-2 text-sm text-ink-muted">
-              Tone
-              <select
-                value={tone}
-                onChange={(e) => setTone(e.target.value as ToneId)}
-                disabled={loading}
-                className="rounded-lg border border-brand-900/10 bg-white px-2.5 py-1.5 text-sm text-ink focus:border-brand-500 focus:outline-none"
-              >
-                {TONE_OPTIONS.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </div>
-      </section>
 
-      {/* Step 3 — Generate bar */}
-      <section className="panel sticky bottom-4 z-20 overflow-hidden sm:bottom-6">
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
-          <div className="min-w-0">
-            <p className="step-label mb-1">
-              <span className="step-num">3</span>
-              Generate
-            </p>
-            <p className="truncate text-sm text-ink-muted">
-              {allSelected
-                ? "All five formats · more API usage"
-                : `${selectedList.map((f) => FORMAT_LABELS[f]).join(" · ")}`}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <Link href="/settings" className="btn-ghost">
-              <Settings className="h-3.5 w-3.5" />
-              LLM
-            </Link>
-            <button
-              onClick={handleRepurpose}
-              disabled={!canGenerate}
-              className="btn-primary min-w-[160px]"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Wand2 className="h-4 w-4" />
+              {loading && (
+                <div className="mb-4 flex items-center gap-3 rounded-xl border border-brand-200 bg-surface-raised px-4 py-3 text-sm text-brand-900 shadow-soft dark:border-brand-700 dark:text-brand-100">
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-brand-700" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">
+                      {activeFormat
+                        ? `Writing ${FORMAT_LABELS[activeFormat]}…`
+                        : statusMessage || "Reading your article…"}
+                    </p>
+                    <div className="mt-2 h-1 overflow-hidden rounded-full bg-brand-100">
+                      <div className="h-full w-2/5 animate-pulse-line rounded-full bg-brand-600" />
+                    </div>
+                  </div>
+                </div>
               )}
-              {loading ? "Generating…" : buttonLabel}
-            </button>
+
+              {/* Article panel */}
+              <section className="panel flex flex-col overflow-hidden">
+                <div className="border-b border-brand-900/5 px-5 py-4">
+                  <p className="step-label">
+                    <span className="step-num">2</span>
+                    Paste your article
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white">
+                      <Type className="h-3.5 w-3.5" />
+                      Paste text
+                    </span>
+                    <ComingSoonInputOption icon={Link2} label="Article URL" />
+                    <ComingSoonInputOption icon={FileUp} label="Upload PDF" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col p-4 sm:p-5">
+                  <textarea
+                    value={article}
+                    onChange={(e) => setArticle(e.target.value)}
+                    placeholder="Paste a blog post, newsletter, or case study here…"
+                    className="field min-h-[200px] flex-1 resize-none font-sans leading-relaxed sm:min-h-[260px] lg:min-h-[300px]"
+                    disabled={loading}
+                  />
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-brand-900/5 pt-3">
+                    <p
+                      className={`text-xs ${
+                        article.trim().length >= 50 ? "text-brand-700" : "text-ink-soft"
+                      }`}
+                    >
+                      {article.length.toLocaleString()} chars
+                      {article.trim().length > 0 && article.trim().length < 50 && (
+                        <span className="text-amber-700">
+                          {" "}
+                          · need {50 - article.trim().length} more
+                        </span>
+                      )}
+                    </p>
+                    <label className="flex items-center gap-2 text-sm text-ink-muted">
+                      Tone
+                      <select
+                        value={tone}
+                        onChange={(e) => setTone(e.target.value as ToneId)}
+                        disabled={loading}
+                        className="rounded-lg border border-brand-900/10 bg-surface-raised px-2.5 py-1.5 text-sm text-ink focus:border-brand-500 focus:outline-none dark:border-brand-200/15"
+                      >
+                        {TONE_OPTIONS.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </section>
+
+              {meta && (
+                <p className="mt-4 text-xs text-ink-soft">
+                  Generated {outputs.filter((o) => o.content).length}/{selectedList.length}{" "}
+                  with{" "}
+                  <span className="font-medium text-ink-muted">{meta.provider}</span> ·{" "}
+                  {meta.model}
+                </p>
+              )}
+
+              {outputs.length > 0 && (
+                <section className="mt-6 space-y-4 pb-4">
+                  <h2 className="font-display text-lg font-semibold text-ink">Your content</h2>
+                  {ALL_FORMATS.map((format) => {
+                    const output = outputs.find((o) => o.format === format);
+                    if (!output) return null;
+                    return (
+                      <OutputCard
+                        key={format}
+                        format={format}
+                        content={output.content}
+                        streaming={streamingFormats.has(format)}
+                      />
+                    );
+                  })}
+                </section>
+              )}
+            </div>
+          </div>
+
+          {/* Generate bar — fixed at bottom of main panel */}
+          <div className="shrink-0 border-t border-brand-900/8 bg-surface-raised px-4 py-3 sm:px-6 lg:px-8 dark:border-brand-200/10">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">
+                  Step 3 · Generate
+                </p>
+                <p className="truncate text-sm text-ink-muted">
+                  {noneSelected
+                    ? "Select formats in the sidebar"
+                    : allSelected
+                      ? "All 5 formats selected"
+                      : selectedList.map((f) => FORMAT_LABELS[f]).join(", ")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/settings"
+                  className="btn-ghost hidden text-xs sm:inline-flex"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                  LLM
+                </Link>
+                <button
+                  onClick={handleRepurpose}
+                  disabled={!canGenerate}
+                  className="btn-primary w-full sm:w-auto sm:min-w-[200px]"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  {loading ? "Generating…" : buttonLabel}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
-
-      {meta && (
-        <p className="text-center text-xs text-ink-soft">
-          Generated {outputs.filter((o) => o.content).length}/{selectedList.length} with{" "}
-          <span className="font-medium text-ink-muted">{meta.provider}</span> · {meta.model} ·{" "}
-          <span className="capitalize">{tone}</span>
-        </p>
-      )}
-
-      {outputs.length > 0 && (
-        <section className="space-y-4 pt-2">
-          <div className="flex items-end justify-between gap-3">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-ink">
-              Your content
-            </h2>
-            <p className="text-xs text-ink-soft">Copy any format below</p>
-          </div>
-          {ALL_FORMATS.map((format) => {
-            const output = outputs.find((o) => o.format === format);
-            if (!output) return null;
-            return (
-              <OutputCard
-                key={format}
-                format={format}
-                content={output.content}
-                streaming={streamingFormats.has(format)}
-              />
-            );
-          })}
-        </section>
-      )}
+      </div>
     </div>
   );
 }
