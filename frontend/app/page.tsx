@@ -100,6 +100,7 @@ export default function HomePage() {
 
     const liveContent: Record<string, string> = {};
     let receivedContent = false;
+    let streamError = "";
 
     try {
       await repurposeArticleStream(
@@ -151,6 +152,7 @@ export default function HomePage() {
               setStatusMessage("");
               break;
             case "error":
+              streamError = event.message;
               setError(event.message);
               setStatusMessage("");
               break;
@@ -158,9 +160,9 @@ export default function HomePage() {
         },
         { tone, formats: selectedList }
       );
-      if (!receivedContent) {
+      if (!receivedContent && !streamError) {
         setError(
-          "No content was generated. Save an API key in Settings on Render, enable a provider, then try again."
+          "No content was generated. Click Test Connection in Settings, try fewer formats, or pick a free model like openrouter/free."
         );
       }
     } catch (e) {

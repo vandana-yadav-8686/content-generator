@@ -1,5 +1,5 @@
+import logging
 import sqlite3
-import json
 from pathlib import Path
 from typing import Optional
 
@@ -7,6 +7,7 @@ from app.config import settings
 from app.models.schemas import ProviderId, ProviderConfig
 from app.services.encryption import encryption_service
 
+logger = logging.getLogger(__name__)
 
 class SettingsRepository:
     def __init__(self) -> None:
@@ -86,7 +87,14 @@ class SettingsRepository:
             conn.commit()
 
     def get_active_provider(self) -> Optional[ProviderConfig]:
-        all_configs = self.get_all()
+        try:
+            all_configs = self.get_all()
+        except ValueError as exc:
+            logger.exception("settings_decrypt_failed")
+            raise ValueError(
+                "Could not read saved API keys. Re-save your key in Settings. "
+                "On Render, set a fixed ENCRYPTION_KEY env variable."
+            ) from exc
         for config in all_configs.values():
             if config.enabled and config.api_key:
                 return config
