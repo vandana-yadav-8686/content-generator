@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
-const backendUrl =
-  process.env.BACKEND_URL?.replace(/\/$/, "") || "http://localhost:8000";
+const { getBackendUrl } = require("./lib/backend-url.js");
+
+const backendUrl = getBackendUrl();
 
 const nextConfig = {
   async rewrites() {
