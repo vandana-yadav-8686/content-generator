@@ -6,6 +6,7 @@ import type {
   TestConnectionResponse,
   ToneId,
 } from "./types";
+import { getStreamEndpoint } from "./backend-url";
 
 const API_BASE = "/api";
 
@@ -50,7 +51,8 @@ export async function repurposeArticleStream(
   onEvent: (event: StreamEvent) => void,
   options?: { providerId?: ProviderId; tone?: ToneId; formats?: string[] }
 ): Promise<void> {
-  const res = await fetch(`${API_BASE}/repurpose/stream`, {
+  const streamUrl = getStreamEndpoint();
+  const res = await fetch(streamUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

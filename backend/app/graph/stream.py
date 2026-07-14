@@ -163,11 +163,20 @@ async def stream_repurpose_graph(
 
         elapsed = round(time.perf_counter() - started, 3)
         logger.info(
-            "langgraph_stream done workflow_id=%s formats=%s elapsed=%ss",
+            "langgraph_stream done workflow_id=%s formats=%s elapsed=%ss emitted=%s",
             workflow_id,
             selected,
             elapsed,
+            len(emitted),
         )
+        if not emitted:
+            yield {
+                "type": "error",
+                "message": (
+                    "No content was generated. Enable a provider with a valid API key "
+                    "in Settings. On Render, set ENCRYPTION_KEY and DATABASE_PATH=/tmp/settings.db."
+                ),
+            }
         yield {
             "type": "done",
             "provider_id": provider,

@@ -42,6 +42,7 @@ export default function HomePage() {
   const [outputs, setOutputs] = useState<RepurposeOutput[]>([]);
   const [streamingFormats, setStreamingFormats] = useState<Set<string>>(new Set());
   const [meta, setMeta] = useState<{ provider: string; model: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const selectedList = ALL_FORMATS.filter((f) => selectedFormats.has(f));
   const allSelected = selectedList.length === ALL_FORMATS.length;
@@ -93,16 +94,21 @@ export default function HomePage() {
     setLoading(true);
     setOutputs([]);
     setMeta(null);
+    setStatusMessage("Starting…");
     setActiveFormat(null);
     setStreamingFormats(new Set());
 
     const liveContent: Record<string, string> = {};
+    let receivedContent = false;
 
     try {
       await repurposeArticleStream(
         article,
         (event) => {
           switch (event.type) {
+            case "status":
+              setStatusMessage(event.message);
+              break;
             case "format_start":
               setActiveFormat(event.format);
               setStreamingFormats((prev) => new Set(prev).add(event.format));
@@ -114,6 +120,7 @@ export default function HomePage() {
               });
               break;
             case "chunk":
+              receivedContent = true;
               liveContent[event.format] =
                 (liveContent[event.format] || "") + event.content;
               setOutputs((prev) =>
@@ -125,6 +132,7 @@ export default function HomePage() {
               );
               break;
             case "format_done":
+              receivedContent = true;
               liveContent[event.format] = event.content;
               setOutputs((prev) =>
                 prev.map((o) =>
@@ -140,14 +148,21 @@ export default function HomePage() {
             case "done":
               setMeta({ provider: event.provider_id, model: event.model });
               setActiveFormat(null);
+              setStatusMessage("");
               break;
             case "error":
               setError(event.message);
+              setStatusMessage("");
               break;
           }
         },
         { tone, formats: selectedList }
       );
+      if (!receivedContent) {
+        setError(
+          "No content was generated. Save an API key in Settings on Render, enable a provider, then try again."
+        );
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Repurposing failed");
     } finally {
@@ -199,7 +214,7 @@ export default function HomePage() {
             <p className="font-medium">
               {activeFormat
                 ? `Writing ${FORMAT_LABELS[activeFormat]}…`
-                : "Reading your article…"}
+                : statusMessage || "Reading your article…"}
             </p>
             <div className="mt-2 h-1 overflow-hidden rounded-full bg-brand-200/80">
               <div className="h-full w-2/5 animate-pulse-line rounded-full bg-brand-600" />

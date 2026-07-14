@@ -54,7 +54,7 @@ export default function SettingsPage() {
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
           {error}
           <p className="mt-1 text-xs text-rose-600">
-            Make sure the backend is running on port 8000.
+            Check that the Render backend is running and your API key is saved in Settings.
           </p>
         </div>
       )}

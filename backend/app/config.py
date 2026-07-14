@@ -34,7 +34,7 @@ def _resolve_encryption_key() -> str:
     if os.environ.get("ENCRYPTION_KEY"):
         return os.environ["ENCRYPTION_KEY"]
 
-    key_file = Path("./data/.encryption_key")
+    key_file = Path(settings.database_path).parent / ".encryption_key"
     key_file.parent.mkdir(parents=True, exist_ok=True)
 
     if key_file.exists():
