@@ -1,6 +1,7 @@
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
+pydantic-core==2.27.2
 pydantic-settings==2.7.0
 python-dotenv==1.0.1
 cryptography==44.0.0
@@ -9,7 +10,7 @@ openai==1.59.3
 anthropic==0.42.0
 google-genai==1.52.0
 cohere==5.13.11
-langgraph>=0.2.60
-langchain-core>=0.3.0
-langchain-openai>=0.3.0
-pymongo>=4.10.0
+langgraph==0.2.60
+langchain-core==0.3.29
+langchain-openai==0.3.0
+pymongo==4.10.1
