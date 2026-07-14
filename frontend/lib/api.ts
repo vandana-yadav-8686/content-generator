@@ -6,7 +6,7 @@ import type {
   TestConnectionResponse,
   ToneId,
 } from "./types";
-import { getStreamEndpoint } from "./backend-url";
+import { getStreamEndpoint } from "./backend-url.js";
 
 const API_BASE = "/api";
 

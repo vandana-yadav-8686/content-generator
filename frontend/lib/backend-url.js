@@ -2,12 +2,6 @@
 const PRODUCTION_BACKEND_URL = "https://content-generator-wv8n.onrender.com";
 const LOCAL_BACKEND_URL = "http://localhost:8000";
 
-/**
- * Resolve backend URL:
- * 1. BACKEND_URL env (explicit override)
- * 2. Production URL on Vercel/production builds
- * 3. localhost for local dev
- */
 function getBackendUrl() {
   const fromEnv = process.env.BACKEND_URL?.replace(/\/$/, "");
   if (fromEnv) return fromEnv;
@@ -19,8 +13,30 @@ function getBackendUrl() {
   return isProduction ? PRODUCTION_BACKEND_URL : LOCAL_BACKEND_URL;
 }
 
+function getPublicBackendUrl() {
+  const fromPublic = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "");
+  if (fromPublic) return fromPublic;
+  return LOCAL_BACKEND_URL;
+}
+
+/** Production browser streams directly to Render (Vercel proxy times out). */
+function getStreamEndpoint() {
+  const isBrowser = typeof window !== "undefined";
+  const isProduction =
+    process.env.NODE_ENV === "production" ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === "production" ||
+    process.env.VERCEL_ENV === "production";
+
+  if (isBrowser && isProduction) {
+    return `${getPublicBackendUrl()}/api/repurpose/stream`;
+  }
+  return "/api/repurpose/stream";
+}
+
 module.exports = {
   getBackendUrl,
+  getPublicBackendUrl,
+  getStreamEndpoint,
   PRODUCTION_BACKEND_URL,
   LOCAL_BACKEND_URL,
 };
