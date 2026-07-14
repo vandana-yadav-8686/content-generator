@@ -35,9 +35,7 @@ const DELIVERABLES = [
 export default function HomePage() {
   const [article, setArticle] = useState("");
   const [tone, setTone] = useState<ToneId>("professional");
-  const [selectedFormats, setSelectedFormats] = useState<Set<string>>(
-    () => new Set(ALL_FORMATS)
-  );
+  const [selectedFormats, setSelectedFormats] = useState<Set<string>>(() => new Set());
   const [loading, setLoading] = useState(false);
   const [activeFormat, setActiveFormat] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -47,6 +45,7 @@ export default function HomePage() {
 
   const selectedList = ALL_FORMATS.filter((f) => selectedFormats.has(f));
   const allSelected = selectedList.length === ALL_FORMATS.length;
+  const noneSelected = selectedList.length === 0;
   const canGenerate = article.trim().length >= 50 && selectedList.length > 0 && !loading;
 
   function toggleFormat(id: string) {
@@ -54,7 +53,6 @@ export default function HomePage() {
     setSelectedFormats((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
-        if (next.size === 1) return prev;
         next.delete(id);
       } else {
         next.add(id);
@@ -68,9 +66,18 @@ export default function HomePage() {
     setSelectedFormats(new Set(ALL_FORMATS));
   }
 
-  function clearAllButOne() {
+  function clearSelection() {
     if (loading) return;
-    setSelectedFormats(new Set(["reel_script"]));
+    setSelectedFormats(new Set());
+  }
+
+  function toggleSelectAll() {
+    if (loading) return;
+    if (allSelected) {
+      clearSelection();
+    } else {
+      selectAll();
+    }
   }
 
   async function handleRepurpose() {
@@ -210,25 +217,41 @@ export default function HomePage() {
               Choose formats
             </p>
             <p className="mt-1.5 text-sm text-ink-muted">
-              {selectedList.length} of {ALL_FORMATS.length} selected — fewer formats means fewer API calls
+              {noneSelected
+                ? "Select at least one format to generate"
+                : `${selectedList.length} of ${ALL_FORMATS.length} selected — fewer formats means fewer API calls`}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="inline-flex items-center rounded-xl border border-brand-900/10 bg-white p-1 shadow-soft">
             <button
               type="button"
-              onClick={clearAllButOne}
+              onClick={toggleSelectAll}
               disabled={loading}
-              className="btn-ghost text-xs"
+              aria-pressed={allSelected}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                allSelected
+                  ? "bg-brand-700 text-white"
+                  : "text-ink-muted hover:bg-brand-50 hover:text-brand-800"
+              }`}
             >
-              Reel only
+              <span
+                className={`flex h-4 w-4 items-center justify-center rounded border ${
+                  allSelected
+                    ? "border-white/40 bg-white/20 text-white"
+                    : "border-brand-900/20 bg-white text-transparent"
+                }`}
+              >
+                <Check className="h-2.5 w-2.5" strokeWidth={3} />
+              </span>
+              {allSelected ? "All selected" : "Select all"}
             </button>
             <button
               type="button"
-              onClick={selectAll}
-              disabled={loading || allSelected}
-              className="btn-ghost text-xs font-semibold text-brand-700"
+              onClick={clearSelection}
+              disabled={loading || noneSelected}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink disabled:opacity-40"
             >
-              Select all
+              Clear
             </button>
           </div>
         </div>
@@ -248,7 +271,7 @@ export default function HomePage() {
                 className={`group relative rounded-2xl border bg-white p-4 text-left transition-all duration-200 disabled:opacity-60 ${
                   selected
                     ? "border-brand-400 shadow-lift ring-2 ring-brand-500/20"
-                    : "border-brand-900/10 shadow-soft hover:-translate-y-0.5 hover:border-brand-300"
+                    : "border-brand-900/10 shadow-soft hover:-translate-y-0.5 hover:border-brand-300 opacity-90"
                 } ${activeFormat === id ? "ring-2 ring-brand-400" : ""}`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -261,8 +284,9 @@ export default function HomePage() {
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
                       selected
                         ? "border-brand-600 bg-brand-600 text-white"
-                        : "border-brand-900/15 bg-white text-transparent"
+                        : "border-brand-900/20 bg-white text-transparent"
                     }`}
+                    aria-hidden
                   >
                     <Check className="h-3 w-3" strokeWidth={3} />
                   </span>
@@ -352,9 +376,6 @@ export default function HomePage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <Link href="/prompts" className="btn-ghost hidden sm:inline-flex">
-              Prompts
-            </Link>
             <Link href="/settings" className="btn-ghost">
               <Settings className="h-3.5 w-3.5" />
               LLM

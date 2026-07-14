@@ -2,12 +2,10 @@ import type {
   ProviderConfig,
   ProviderConfigUpdate,
   ProviderId,
-  RepurposeResponse,
   StreamEvent,
   TestConnectionResponse,
   ToneId,
 } from "./types";
-import type { Prompt, PromptListResponse } from "./prompts";
 
 const API_BASE = "/api";
 
@@ -47,20 +45,6 @@ export async function testProvider(
   });
 }
 
-export async function repurposeArticle(
-  article: string,
-  options?: { providerId?: ProviderId; tone?: ToneId }
-): Promise<RepurposeResponse> {
-  return request("/repurpose/", {
-    method: "POST",
-    body: JSON.stringify({
-      article,
-      provider_id: options?.providerId,
-      tone: options?.tone ?? "professional",
-    }),
-  });
-}
-
 export async function repurposeArticleStream(
   article: string,
   onEvent: (event: StreamEvent) => void,
@@ -96,29 +80,12 @@ export async function repurposeArticleStream(
     buffer = lines.pop() ?? "";
     for (const line of lines) {
       if (line.startsWith("data: ")) {
-        onEvent(JSON.parse(line.slice(6)) as StreamEvent);
+        try {
+          onEvent(JSON.parse(line.slice(6)) as StreamEvent);
+        } catch {
+          console.warn("Skipping malformed SSE event:", line.slice(0, 120));
+        }
       }
     }
   }
-}
-
-export async function getPrompts(): Promise<PromptListResponse> {
-  return request("/prompts");
-}
-
-export async function updatePrompt(
-  promptId: string,
-  data: { content?: string; format_prompt?: string; example?: string }
-): Promise<Prompt> {
-  return request(`/prompts/${promptId}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
-}
-
-export async function resetPrompt(promptId?: string): Promise<{ message: string }> {
-  return request("/prompts/reset", {
-    method: "POST",
-    body: JSON.stringify({ prompt_id: promptId ?? null }),
-  });
 }

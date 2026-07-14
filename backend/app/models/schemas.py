@@ -64,18 +64,6 @@ class RepurposeRequest(BaseModel):
     article: str = Field(..., min_length=50)
     provider_id: Optional[ProviderId] = None
     tone: str = Field(default="professional")
-    test_mode: bool = Field(
-        default=False,
-        description="Quick test: 1 format only, no expand/compress retries",
-    )
-    offline_mode: bool = Field(
-        default=False,
-        description="Use offline mock LLM — zero API calls, no rate limits",
-    )
-    skip_quality_passes: bool = Field(
-        default=False,
-        description="Skip expand/compress passes (fewer API calls)",
-    )
     formats: list[str] = Field(
         default=[
             "youtube_script",

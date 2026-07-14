@@ -44,9 +44,6 @@ export default function RootLayout({
                 <Link href="/" className="btn-ghost hidden sm:inline-flex">
                   Create
                 </Link>
-                <Link href="/prompts" className="btn-ghost">
-                  Prompts
-                </Link>
                 <Link
                   href="/settings"
                   className="ml-1 inline-flex items-center gap-1.5 rounded-xl border border-brand-900/10 bg-white px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-brand-300 hover:bg-brand-50"
