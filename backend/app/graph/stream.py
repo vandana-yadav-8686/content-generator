@@ -40,6 +40,15 @@ def _user_visible_error(err: str) -> bool:
     return True
 
 
+def _is_graph_schema_error(msg: str) -> bool:
+    lower = msg.lower()
+    return (
+        "already being used as a state key" in lower
+        or "can receive only one value per step" in lower
+        or "invalid_concurrent_graph_update" in lower
+    )
+
+
 def _parse_provider(provider_id: str | ProviderId | None) -> ProviderId | None:
     if provider_id is None:
         return None
@@ -263,9 +272,9 @@ async def stream_repurpose_graph(
         }
     except ValueError as e:
         msg = str(e)
-        if "already being used as a state key" in msg:
+        if _is_graph_schema_error(msg):
             reset_compiled_graph()
-            logger.warning("state_key_collision recovered: %s", msg)
+            logger.warning("graph_schema_stale recovered: %s", msg)
             yield {
                 "type": "error",
                 "message": "Workflow refreshed. Click Generate again.",
@@ -274,9 +283,9 @@ async def stream_repurpose_graph(
             yield {"type": "error", "message": msg}
     except Exception as e:
         msg = str(e)
-        if "already being used as a state key" in msg:
+        if _is_graph_schema_error(msg):
             reset_compiled_graph()
-            logger.warning("state_key_collision recovered: %s", msg)
+            logger.warning("graph_schema_stale recovered: %s", msg)
             yield {
                 "type": "error",
                 "message": "Workflow refreshed. Click Generate again.",

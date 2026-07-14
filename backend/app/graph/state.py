@@ -36,6 +36,20 @@ def merge_outputs(left: dict | None, right: dict | None) -> dict:
     return out
 
 
+def last_value(left: Any, right: Any) -> Any:
+    """Last-write-wins — required when parallel format nodes write the same key."""
+    return right if right is not None else left
+
+
+def merge_lists(left: list | None, right: list | None) -> list:
+    """Deduping append for parallel writers (e.g. failed_formats)."""
+    out: list = list(left or [])
+    for item in right or []:
+        if item not in out:
+            out.append(item)
+    return out
+
+
 class GraphState(TypedDict):
     # --- Input ---
     article: str
@@ -53,19 +67,20 @@ class GraphState(TypedDict):
     outputs: Annotated[dict[str, str], merge_outputs]
 
     # --- Review / control ---
-    quality_score: float
-    quality_notes: str
-    failed_formats: list[str]
-    regenerate_formats: list[str]
-    retry_count: int
-    workflow_status: str  # pending | running | completed | partial | failed
+    quality_score: Annotated[float, last_value]
+    quality_notes: Annotated[str, last_value]
+    failed_formats: Annotated[list[str], merge_lists]
+    regenerate_formats: Annotated[list[str], last_value]
+    retry_count: Annotated[int, last_value]
+    workflow_status: Annotated[str, last_value]
 
     # --- Observability ---
-    model_used: str
-    provider_id: str
+    # Parallel format nodes all write these — must use reducers
+    model_used: Annotated[str, last_value]
+    provider_id: Annotated[str, last_value]
     prompt_version: str
     document_id: NotRequired[str]
     errors: Annotated[list[str], operator.add]
     node_timings: Annotated[dict[str, float], merge_dicts]
     usage: Annotated[dict[str, Any], merge_dicts]
-    processing_time: float
+    processing_time: Annotated[float, last_value]

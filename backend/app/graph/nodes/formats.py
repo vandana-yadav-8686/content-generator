@@ -45,10 +45,9 @@ def make_format_node(spec: FormatSpec) -> Callable[[GraphState], Coroutine[Any, 
                 node=spec.id,
                 max_tokens=spec.max_tokens,
             )
+            # Only write merge-safe keys — parallel nodes share one graph step.
             return {
                 "outputs": {spec.id: content},
-                "provider_id": llm.session.provider_id,
-                "model_used": llm.session.model,
                 "usage": llm.session.usage_summary(),
             }
 

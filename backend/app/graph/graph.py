@@ -93,20 +93,26 @@ def build_graph(*, checkpointer: Any | None = None):
 
 _memory = MemorySaver()
 _compiled = None
+# Bump when GraphState reducers or node wiring change (invalidates cached compile).
+_SCHEMA_VERSION = 2
+_compiled_version: int | None = None
 
 
 def get_compiled_graph():
     """Compiled graph with in-memory checkpointing (swap for Postgres/SQLite later)."""
-    global _compiled
-    if _compiled is None:
+    global _compiled, _compiled_version
+    if _compiled is None or _compiled_version != _SCHEMA_VERSION:
         _compiled = build_graph(checkpointer=_memory)
+        _compiled_version = _SCHEMA_VERSION
     return _compiled
 
 
 def reset_compiled_graph() -> None:
-    """Force rebuild after code/deploy changes that alter node names."""
-    global _compiled
+    """Force rebuild after state schema / node name changes."""
+    global _compiled, _memory, _compiled_version
     _compiled = None
+    _compiled_version = None
+    _memory = MemorySaver()
 
 
 def graph_mermaid() -> str:
