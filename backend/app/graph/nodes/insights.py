@@ -1,4 +1,4 @@
-"""ExtractInsightsNode — structured output with JSON salvage + fallback."""
+"""ExtractInsightsNode — structured output with JSON salvage + silent fallback."""
 
 from __future__ import annotations
 
@@ -42,7 +42,6 @@ async def extract_insights(state: GraphState) -> dict:
         llm = get_llm_service()
         article = state.get("cleaned_article") or state.get("article") or ""
         summary = state.get("summary") or ""
-        errors: list[str] = []
 
         for attempt, prompt in enumerate((insights_prompt, retry_prompt), start=1):
             try:
@@ -52,16 +51,13 @@ async def extract_insights(state: GraphState) -> dict:
                     "usage": llm.session.usage_summary(),
                 }
             except (ValueError, ValidationError) as exc:
-                msg = f"insights attempt {attempt}: {exc}"
-                logger.warning(msg)
-                errors.append(msg)
+                # Log only — do not surface to UI; fallback handles recovery
+                logger.warning("insights attempt %s failed: %s", attempt, exc)
 
-        # Never block generation — derive minimal insights from summary/article
         fallback = insights_from_summary(summary, article)
-        logger.warning("insights using summary fallback after %d failed attempts", len(errors))
+        logger.info("insights using summary fallback after failed JSON parse")
         return {
             "insights": ArticleInsights.model_validate(fallback).model_dump(),
-            "errors": errors + ["insights: used summary fallback (model JSON was invalid)"],
             "usage": llm.session.usage_summary(),
         }
 

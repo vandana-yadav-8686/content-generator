@@ -30,6 +30,16 @@ _STATUS = {
 KEEPALIVE_SEC = 12
 
 
+def _user_visible_error(err: str) -> bool:
+    """Hide recovered/internal pipeline errors from the UI."""
+    lower = err.lower()
+    if lower.startswith("insights"):
+        return False
+    if "summary fallback" in lower:
+        return False
+    return True
+
+
 def _parse_provider(provider_id: str | ProviderId | None) -> ProviderId | None:
     if provider_id is None:
         return None
@@ -52,7 +62,7 @@ def _provider_preflight() -> str | None:
     if not active.api_key:
         return (
             f"{active.provider_id.value} is enabled but the API key could not be loaded. "
-            "Re-save your key on Render (set a fixed ENCRYPTION_KEY env var so keys persist)."
+            "Re-save your key in Settings (ensure ENCRYPTION_KEY is set on the server)."
         )
     try:
         get_llm_service()
@@ -167,7 +177,11 @@ async def stream_repurpose_graph(
                     model = str(delta["model_used"])
 
                 for err in delta.get("errors") or []:
-                    if isinstance(err, str) and err not in collected_errors:
+                    if (
+                        isinstance(err, str)
+                        and err not in collected_errors
+                        and _user_visible_error(err)
+                    ):
                         collected_errors.append(err)
                         yield {"type": "error", "message": err}
 
@@ -236,10 +250,9 @@ async def stream_repurpose_graph(
                 msg = f"Generation failed: {detail}"
             else:
                 msg = (
-                    "No content was generated. Your API key is saved, but the LLM call likely "
-                    "failed or timed out. Try: (1) Test Connection in Settings, (2) use a free "
-                    "model like openrouter/free, (3) generate fewer formats, (4) upgrade Render "
-                    "plan if requests time out."
+                    "No content was generated. Your API key is saved in MongoDB, but the LLM call "
+                    "likely failed or timed out. Try: (1) Test Connection in Settings, (2) use "
+                    "openrouter/free, (3) generate fewer formats."
                 )
             yield {"type": "error", "message": msg}
 

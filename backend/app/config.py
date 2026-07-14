@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     encryption_key: str = ""
-    database_path: str = "./data/settings.db"
+    data_dir: str = "./data"
     cors_origins: str = "http://localhost:3000"
     mongodb_uri: str = ""
     mongodb_db: str = "content_repurposing"
@@ -20,9 +20,9 @@ class Settings(BaseSettings):
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     @property
-    def db_path(self) -> Path:
-        path = Path(self.database_path)
-        path.parent.mkdir(parents=True, exist_ok=True)
+    def data_path(self) -> Path:
+        path = Path(self.data_dir)
+        path.mkdir(parents=True, exist_ok=True)
         return path
 
     @property
@@ -34,7 +34,7 @@ def _resolve_encryption_key() -> str:
     if os.environ.get("ENCRYPTION_KEY"):
         return os.environ["ENCRYPTION_KEY"]
 
-    key_file = Path(settings.database_path).parent / ".encryption_key"
+    key_file = Path(settings.data_dir) / ".encryption_key"
     key_file.parent.mkdir(parents=True, exist_ok=True)
 
     if key_file.exists():

@@ -122,6 +122,10 @@ export default function HomePage() {
               break;
             case "chunk":
               receivedContent = true;
+              if (streamError) {
+                streamError = "";
+                setError("");
+              }
               liveContent[event.format] =
                 (liveContent[event.format] || "") + event.content;
               setOutputs((prev) =>
@@ -134,6 +138,10 @@ export default function HomePage() {
               break;
             case "format_done":
               receivedContent = true;
+              if (streamError) {
+                streamError = "";
+                setError("");
+              }
               liveContent[event.format] = event.content;
               setOutputs((prev) =>
                 prev.map((o) =>

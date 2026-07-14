@@ -38,4 +38,5 @@ async def root():
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "langgraph": True}
+    mongo = "ok" if settings.mongodb_enabled else "missing"
+    return {"status": "ok", "langgraph": True, "mongodb": mongo}

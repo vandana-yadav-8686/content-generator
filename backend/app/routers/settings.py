@@ -16,6 +16,12 @@ from app.services.settings_service import settings_repository
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 
+def _mongo_http_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, RuntimeError) and "MongoDB" in str(exc):
+        return HTTPException(status_code=503, detail=str(exc))
+    raise exc
+
+
 def _build_response(provider_id: ProviderId, saved: ProviderConfig | None) -> ProviderConfigResponse:
     provider_class = ProviderFactory.get_provider_class(provider_id)
     meta = provider_class.metadata
@@ -49,7 +55,10 @@ def _build_response(provider_id: ProviderId, saved: ProviderConfig | None) -> Pr
 
 @router.get("/providers", response_model=list[ProviderConfigResponse])
 async def list_providers():
-    saved = settings_repository.get_all()
+    try:
+        saved = settings_repository.get_all()
+    except Exception as exc:
+        raise _mongo_http_error(exc) from exc
     return [
         _build_response(pid, saved.get(pid))
         for pid in ProviderId

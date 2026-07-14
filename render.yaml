@@ -19,5 +19,3 @@ services:
         value: content_repurposing
       - key: ENCRYPTION_KEY
         generateValue: true
-      - key: DATABASE_PATH
-        value: /tmp/settings.db

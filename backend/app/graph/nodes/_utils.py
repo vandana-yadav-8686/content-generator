@@ -29,6 +29,7 @@ def insights_json(state: GraphState) -> str:
 
 def _strip_wrappers(text: str) -> str:
     text = text.strip().lstrip("\ufeff")
+    text = text.replace("\u201c", '"').replace("\u201d", '"').replace("\u2018", "'").replace("\u2019", "'")
     fence = re.search(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL | re.IGNORECASE)
     if fence:
         text = fence.group(1).strip()
@@ -36,6 +37,18 @@ def _strip_wrappers(text: str) -> str:
     if start != -1 and end != -1 and end > start:
         text = text[start : end + 1]
     return text.strip()
+
+
+def _repair_json_fragment(text: str) -> str:
+    """Fix common partial JSON from LLMs (missing braces, bad leading whitespace)."""
+    t = text.strip()
+    if not t:
+        return t
+    if not t.startswith("{") and re.match(r'^[\s\n\r]*"', t):
+        t = "{" + t
+    if not t.endswith("}"):
+        t = t.rstrip(", \n\r\t") + "}"
+    return t
 
 
 def _remove_trailing_commas(text: str) -> str:
@@ -80,9 +93,12 @@ def parse_json_object(raw: str) -> dict[str, Any]:
         raise ValueError("Empty JSON payload from model")
 
     variants: list[str] = []
-    for base in (text, _quote_unquoted_keys(text), _python_literals_to_json(text)):
+    for base in (text, _repair_json_fragment(text), _quote_unquoted_keys(text), _python_literals_to_json(text)):
         variants.append(base)
         variants.append(_remove_trailing_commas(base))
+        repaired = _repair_json_fragment(_quote_unquoted_keys(base))
+        variants.append(repaired)
+        variants.append(_remove_trailing_commas(repaired))
         variants.append(_python_literals_to_json(_remove_trailing_commas(_quote_unquoted_keys(base))))
 
     seen: set[str] = set()

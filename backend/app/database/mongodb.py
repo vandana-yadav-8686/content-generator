@@ -10,7 +10,8 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 _client: Any = None
-_indexes_ready = False
+_content_indexes_ready = False
+_settings_indexes_ready = False
 
 
 def get_mongo_client():
@@ -22,8 +23,6 @@ def get_mongo_client():
 
     from pymongo import MongoClient
 
-    # Single long-lived client for the FastAPI process (reuse across requests).
-    # maxPoolSize sized for moderate concurrent generation traffic.
     _client = MongoClient(
         settings.mongodb_uri,
         maxPoolSize=50,
@@ -42,16 +41,27 @@ def get_mongo_client():
     return _client
 
 
-def get_content_collection():
+def _require_client():
     client = get_mongo_client()
     if client is None:
-        raise RuntimeError("MongoDB is not configured (set MONGODB_URI)")
-    return client[settings.mongodb_db]["repurposed_content"]
+        raise RuntimeError(
+            "MongoDB is not configured. Set MONGODB_URI in your environment."
+        )
+    return client
 
 
-def ensure_indexes() -> None:
-    global _indexes_ready
-    if _indexes_ready or not settings.mongodb_enabled:
+def get_content_collection():
+    return _require_client()[settings.mongodb_db]["repurposed_content"]
+
+
+def get_settings_collection():
+    """Provider API keys and config (encrypted)."""
+    return _require_client()[settings.mongodb_db]["provider_settings"]
+
+
+def ensure_content_indexes() -> None:
+    global _content_indexes_ready
+    if _content_indexes_ready or not settings.mongodb_enabled:
         return
     try:
         col = get_content_collection()
@@ -61,7 +71,26 @@ def ensure_indexes() -> None:
         col.create_index("provider_id")
         col.create_index("prompt_version")
         col.create_index([("tenant_id", 1), ("created_at", -1)])
-        # Future vector search: create Atlas Vector Search index in Atlas UI on `embedding`
-        _indexes_ready = True
+        _content_indexes_ready = True
     except Exception:
-        logger.exception("Failed creating Mongo indexes")
+        logger.exception("Failed creating content Mongo indexes")
+
+
+def ensure_settings_indexes() -> None:
+    global _settings_indexes_ready
+    if _settings_indexes_ready or not settings.mongodb_enabled:
+        return
+    try:
+        col = get_settings_collection()
+        col.create_index("provider_id", unique=True)
+        col.create_index("enabled")
+        col.create_index("updated_at")
+        _settings_indexes_ready = True
+    except Exception:
+        logger.exception("Failed creating settings Mongo indexes")
+
+
+def ensure_indexes() -> None:
+    """Ensure indexes for all collections."""
+    ensure_content_indexes()
+    ensure_settings_indexes()
