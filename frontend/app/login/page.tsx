@@ -8,7 +8,6 @@ import { login } from "@/lib/api";
 import { setAuth } from "@/lib/auth";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/Toast";
-import ThemeToggle from "@/components/ThemeToggle";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,10 +34,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4">
-      <div className="absolute right-4 top-4 sm:right-0 sm:top-0">
-        <ThemeToggle />
-      </div>
+    <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4">
       <div className="panel p-6 sm:p-8">
         <p className="step-label mb-3">
           <span className="step-num">01</span>
@@ -57,11 +53,11 @@ export default function LoginPage() {
             <input
               type="email"
               required
-              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="field"
               placeholder="you@example.com"
+              autoComplete="email"
             />
           </div>
           <div>
@@ -69,23 +65,24 @@ export default function LoginPage() {
             <input
               type="password"
               required
-              autoComplete="current-password"
+              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="field"
               placeholder="••••••••"
+              autoComplete="current-password"
             />
           </div>
           <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-            Sign in
+            {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-ink-muted">
-          No account?{" "}
+        <p className="mt-6 text-center text-sm text-ink-muted">
+          Don&apos;t have an account?{" "}
           <Link href="/register" className="font-medium text-brand-700 hover:underline">
-            Create one
+            Register
           </Link>
         </p>
       </div>

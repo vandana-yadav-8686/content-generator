@@ -8,7 +8,6 @@ import { register } from "@/lib/api";
 import { setAuth } from "@/lib/auth";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/Toast";
-import ThemeToggle from "@/components/ThemeToggle";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -36,10 +35,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4">
-      <div className="absolute right-4 top-4 sm:right-0 sm:top-0">
-        <ThemeToggle />
-      </div>
+    <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4">
       <div className="panel p-6 sm:p-8">
         <p className="step-label mb-3">
           <span className="step-num">01</span>

@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 
 export type Theme = "light" | "dark";
 
@@ -24,6 +25,11 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 const STORAGE_KEY = "repurposer-theme";
+
+function isAuthPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return pathname.startsWith("/login") || pathname.startsWith("/register");
+}
 
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
@@ -45,15 +51,27 @@ function getPreferredTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [theme, setThemeState] = useState<Theme>("light");
   const [ready, setReady] = useState(false);
+  const forceLight = isAuthPath(pathname);
 
   useEffect(() => {
     const preferred = getPreferredTheme();
     setThemeState(preferred);
-    applyTheme(preferred);
+    applyTheme(isAuthPath(pathname) ? "light" : preferred);
     setReady(true);
   }, []);
+
+  // Login / Register always stay on light; restore saved theme elsewhere
+  useEffect(() => {
+    if (!ready) return;
+    if (forceLight) {
+      applyTheme("light");
+    } else {
+      applyTheme(theme);
+    }
+  }, [forceLight, theme, ready]);
 
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
@@ -69,7 +87,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setTheme(theme === "dark" ? "light" : "dark");
   }, [setTheme, theme]);
 
-  // Avoid mismatch before client preference is known
+  const displayTheme: Theme = forceLight ? "light" : theme;
+
   if (!ready) {
     return (
       <ThemeContext.Provider value={{ theme: "light", setTheme, toggleTheme }}>
@@ -79,7 +98,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme: displayTheme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
