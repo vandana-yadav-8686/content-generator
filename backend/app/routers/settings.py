@@ -1,5 +1,10 @@
+import logging
+
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
+from pymongo.errors import PyMongoError
+
+logger = logging.getLogger(__name__)
 
 from app.models.schemas import (
     ProviderId,
@@ -19,7 +24,20 @@ router = APIRouter(prefix="/api/settings", tags=["settings"])
 def _mongo_http_error(exc: Exception) -> HTTPException:
     if isinstance(exc, RuntimeError) and "MongoDB" in str(exc):
         return HTTPException(status_code=503, detail=str(exc))
-    raise exc
+    if isinstance(exc, PyMongoError):
+        logger.exception("mongodb_settings_error")
+        return HTTPException(
+            status_code=503,
+            detail=(
+                "Could not reach MongoDB. Check MONGODB_URI on Render and allow "
+                "0.0.0.0/0 in Atlas Network Access."
+            ),
+        )
+    logger.exception("settings_error")
+    return HTTPException(
+        status_code=500,
+        detail="Settings failed to load. Check Render logs and MongoDB configuration.",
+    )
 
 
 def _build_response(provider_id: ProviderId, saved: ProviderConfig | None) -> ProviderConfigResponse:
@@ -55,25 +73,49 @@ def _build_response(provider_id: ProviderId, saved: ProviderConfig | None) -> Pr
 
 @router.get("/providers", response_model=list[ProviderConfigResponse])
 async def list_providers():
-    try:
-        saved = settings_repository.get_all()
-    except Exception as exc:
-        raise _mongo_http_error(exc) from exc
-    return [
-        _build_response(pid, saved.get(pid))
-        for pid in ProviderId
-    ]
+    saved = settings_repository.get_all_safe()
+    providers: list[ProviderConfigResponse] = []
+    for pid in ProviderId:
+        try:
+            providers.append(_build_response(pid, saved.get(pid)))
+        except Exception:
+            logger.exception("provider_response_failed provider=%s", pid.value)
+            meta = ProviderFactory.get_provider_class(pid).metadata
+            providers.append(
+                ProviderConfigResponse(
+                    provider_id=pid,
+                    name=meta.name,
+                    description=meta.description,
+                    enabled=False,
+                    has_api_key=False,
+                    model=meta.default_model,
+                    available_models=[
+                        ModelOption(id=m.id, name=m.name, modality=m.modality)
+                        for m in meta.models
+                    ],
+                    base_url=meta.default_base_url,
+                )
+            )
+    return providers
 
 
 @router.get("/providers/{provider_id}", response_model=ProviderConfigResponse)
 async def get_provider(provider_id: ProviderId):
-    saved = settings_repository.get(provider_id)
+    saved = settings_repository.get_all_safe().get(provider_id)
+    if saved is None:
+        try:
+            saved = settings_repository.get(provider_id)
+        except Exception:
+            logger.exception("provider_get_failed provider=%s", provider_id.value)
     return _build_response(provider_id, saved)
 
 
 @router.put("/providers/{provider_id}", response_model=ProviderConfigResponse)
 async def update_provider(provider_id: ProviderId, update: ProviderConfigUpdate):
-    existing = settings_repository.get(provider_id)
+    try:
+        existing = settings_repository.get(provider_id)
+    except Exception as exc:
+        raise _mongo_http_error(exc) from exc
     provider_class = ProviderFactory.get_provider_class(provider_id)
     meta = provider_class.metadata
 
@@ -108,7 +150,10 @@ async def update_provider(provider_id: ProviderId, update: ProviderConfigUpdate)
         model=model,
         base_url=update.base_url or (existing.base_url if existing else meta.default_base_url),
     )
-    settings_repository.save(config)
+    try:
+        settings_repository.save(config)
+    except Exception as exc:
+        raise _mongo_http_error(exc) from exc
     return _build_response(provider_id, config)
 
 
@@ -120,7 +165,10 @@ class TestBody(BaseModel):
 
 @router.post("/providers/{provider_id}/test", response_model=TestConnectionResponse)
 async def test_provider(provider_id: ProviderId, request: TestBody | None = None):
-    saved = settings_repository.get(provider_id)
+    try:
+        saved = settings_repository.get(provider_id)
+    except Exception as exc:
+        raise _mongo_http_error(exc) from exc
     provider_class = ProviderFactory.get_provider_class(provider_id)
     meta = provider_class.metadata
 

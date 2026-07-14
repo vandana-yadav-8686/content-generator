@@ -38,5 +38,22 @@ async def root():
 
 @app.get("/api/health")
 async def health():
-    mongo = "ok" if settings.mongodb_enabled else "missing"
+    if not settings.mongodb_enabled:
+        mongo = "missing"
+    else:
+        try:
+            from app.database.mongodb import get_mongo_client
+
+            client = get_mongo_client()
+            if client is None:
+                mongo = "unreachable"
+            else:
+                col = client[settings.mongodb_db]["provider_settings"]
+                mongo = "ok"
+                try:
+                    mongo = f"ok ({col.count_documents({})} providers)"
+                except Exception:
+                    mongo = "ok"
+        except Exception:
+            mongo = "unreachable"
     return {"status": "ok", "langgraph": True, "mongodb": mongo}

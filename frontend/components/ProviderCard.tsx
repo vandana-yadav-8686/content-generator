@@ -51,6 +51,30 @@ export default function ProviderCard({ provider, onUpdate }: Props) {
   const initial = provider.name.slice(0, 1).toUpperCase();
   const safeModel = resolveModel(provider, model);
 
+  function canTest(): boolean {
+    if (apiKey.trim()) return validateKey(apiKey);
+    if (provider.has_api_key) {
+      setKeyError("");
+      return true;
+    }
+    setKeyError("Paste your API key, or save one first");
+    return false;
+  }
+
+  function canSave(): boolean {
+    if (!enabled) {
+      setKeyError("");
+      return true;
+    }
+    if (apiKey.trim()) return validateKey(apiKey);
+    if (provider.has_api_key) {
+      setKeyError("");
+      return true;
+    }
+    setKeyError("API key is required to enable this provider");
+    return false;
+  }
+
   function validateKey(key: string): boolean {
     if (!key && !provider.has_api_key) {
       setKeyError("API key is required");
@@ -65,7 +89,7 @@ export default function ProviderCard({ provider, onUpdate }: Props) {
   }
 
   async function handleTest() {
-    if (!validateKey(apiKey)) return;
+    if (!canTest()) return;
     setTesting(true);
     setTestResult(null);
     try {
@@ -86,7 +110,7 @@ export default function ProviderCard({ provider, onUpdate }: Props) {
   }
 
   async function handleSave() {
-    if (enabled && !validateKey(apiKey) && !provider.has_api_key) return;
+    if (!canSave()) return;
     setSaving(true);
     setSaveMessage("");
     try {

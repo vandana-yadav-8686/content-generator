@@ -36,8 +36,8 @@ def get_mongo_client():
         _client.admin.command("ping")
         logger.info("MongoDB connected db=%s", settings.mongodb_db)
     except Exception:
-        logger.exception("MongoDB ping failed — check MONGODB_URI")
-        raise
+        logger.exception("MongoDB ping failed — check MONGODB_URI and Atlas IP allowlist")
+        _client = None
     return _client
 
 
@@ -45,7 +45,8 @@ def _require_client():
     client = get_mongo_client()
     if client is None:
         raise RuntimeError(
-            "MongoDB is not configured. Set MONGODB_URI in your environment."
+            "MongoDB is unreachable. Set MONGODB_URI on Render and allow 0.0.0.0/0 "
+            "in MongoDB Atlas Network Access."
         )
     return client
 

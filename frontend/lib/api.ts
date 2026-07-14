@@ -6,18 +6,27 @@ import type {
   TestConnectionResponse,
   ToneId,
 } from "./types";
-import { getStreamEndpoint } from "./backend-url.js";
+import { getApiBase, getStreamEndpoint } from "./backend-url.js";
 
-const API_BASE = "/api";
+function apiBase(): string {
+  return getApiBase();
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${apiBase()}${path}`, {
     headers: { "Content-Type": "application/json", ...options?.headers },
     ...options,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || "Request failed");
+    const detail = err.detail;
+    const message =
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((d: { msg?: string }) => d.msg).filter(Boolean).join("; ")
+          : res.statusText || "Request failed";
+    throw new Error(message || "Request failed");
   }
   return res.json();
 }

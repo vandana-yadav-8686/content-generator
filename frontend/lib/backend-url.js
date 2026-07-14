@@ -16,7 +16,27 @@ function getBackendUrl() {
 function getPublicBackendUrl() {
   const fromPublic = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "");
   if (fromPublic) return fromPublic;
-  return LOCAL_BACKEND_URL;
+
+  const isProduction =
+    process.env.NODE_ENV === "production" ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === "production" ||
+    process.env.VERCEL_ENV === "production";
+
+  return isProduction ? PRODUCTION_BACKEND_URL : LOCAL_BACKEND_URL;
+}
+
+/** Browser API base — production calls Render directly (Vercel proxy breaks save/test). */
+function getApiBase() {
+  const isBrowser = typeof window !== "undefined";
+  const isProduction =
+    process.env.NODE_ENV === "production" ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === "production" ||
+    process.env.VERCEL_ENV === "production";
+
+  if (isBrowser && isProduction) {
+    return `${getPublicBackendUrl()}/api`;
+  }
+  return "/api";
 }
 
 /** Production browser streams directly to Render (Vercel proxy times out). */
@@ -36,6 +56,7 @@ function getStreamEndpoint() {
 module.exports = {
   getBackendUrl,
   getPublicBackendUrl,
+  getApiBase,
   getStreamEndpoint,
   PRODUCTION_BACKEND_URL,
   LOCAL_BACKEND_URL,
